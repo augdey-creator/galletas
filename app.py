@@ -6,23 +6,27 @@ import io
 st.set_page_config(page_title="Galletas Guapas", layout="centered")
 
 # ======================
-# 🎨 ESTILOS
+# 🎨 ESTILOS MEJORADOS
 # ======================
 st.markdown("""
 <style>
-.stApp { background-color: #fff1f2; }
 
+/* FONDO */
+.stApp {
+    background-color: #fff1f2;
+}
+
+/* CONTENEDOR */
 .block-container {
     max-width: 900px;
     margin: auto;
 }
 
-/* TITULO */
+/* TITULO PRINCIPAL */
 h1 {
     text-align: center;
     color: #7a0f2b;
     font-size: 30px;
-    margin-bottom: 0;
 }
 
 /* SUBTITULO */
@@ -32,10 +36,26 @@ h1 {
     font-size: 14px;
 }
 
-/* TEXTO */
+/* 🔥 SUBHEADERS (CONFIGURACIÓN, INVENTARIO, ETC) */
+h2, h3 {
+    color: #111827 !important;
+}
+
+/* 🔥 LABELS Y TEXTO */
 label, .stMarkdown, .stText {
     color: #111827 !important;
     font-weight: 500;
+}
+
+/* 🔥 METRICAS (TOTAL COMPRA, ETC) */
+[data-testid="stMetricValue"] {
+    color: #111827 !important;
+    font-weight: bold;
+}
+
+/* 🔥 TITULO METRICA */
+[data-testid="stMetricLabel"] {
+    color: #374151 !important;
 }
 
 /* INPUTS */
@@ -53,10 +73,9 @@ label, .stMarkdown, .stText {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* METRICAS */
-.metric {
-    font-size: 24px;
-    font-weight: bold;
+/* TEXTO GENERAL */
+p, span {
+    color: #111827 !important;
 }
 
 /* HR */
@@ -66,6 +85,7 @@ hr {
     background: #fecdd3;
     margin: 20px 0;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -174,7 +194,7 @@ if relleno:
 receta.update(toppings)
 
 # ======================
-# INVENTARIO (2 COLUMNAS)
+# INVENTARIO
 # ======================
 st.subheader("📦 Inventario")
 
@@ -217,8 +237,7 @@ costo_galleta = costo_total / galletas if galletas > 0 else 0
 multiplicador = st.slider("Multiplicador de precio", 1.0, 5.0, 2.5)
 
 precio_sugerido = costo_galleta * multiplicador
-ganancia_por_galleta = precio_sugerido - costo_galleta
-ganancia_total = ganancia_por_galleta * galletas
+ganancia_total = (precio_sugerido - costo_galleta) * galletas
 
 # ======================
 # DASHBOARD
@@ -226,28 +245,16 @@ ganancia_total = ganancia_por_galleta * galletas
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown(f"""
-    <div class="card">
-    <h3>📊 Producción</h3>
-    <div class="metric">{round(galletas, 1)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="card"><h3>Producción</h3><p>{round(galletas, 1)} galletas</p></div>', unsafe_allow_html=True)
 
 with col2:
-    st.markdown(f"""
-    <div class="card">
-    <h3>💰 Costos</h3>
-    <div class="metric">${round(costo_total, 2)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="card"><h3>Costos</h3><p>${round(costo_total, 2)}</p></div>', unsafe_allow_html=True)
 
 with col3:
-    st.markdown(f"""
-    <div class="card">
-    <h3>💵 Ganancia</h3>
-    <div class="metric">${round(ganancia_total, 2)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="card"><h3>Ganancia</h3><p>${round(ganancia_total, 2)}</p></div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
