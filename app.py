@@ -6,17 +6,12 @@ import io
 st.set_page_config(page_title="Galletas Guapas", layout="centered")
 
 # ======================
-# 🎨 ESTILOS COMPLETOS
+# 🎨 ESTILOS
 # ======================
 st.markdown("""
 <style>
+.stApp { background-color: #fff1f2; }
 
-/* FONDO */
-.stApp {
-    background-color: #fff1f2;
-}
-
-/* CONTENEDOR */
 .block-container {
     max-width: 900px;
     margin: auto;
@@ -26,7 +21,7 @@ st.markdown("""
 h1 {
     text-align: center;
     color: #7a0f2b;
-    font-size: 32px;
+    font-size: 30px;
     margin-bottom: 0;
 }
 
@@ -34,11 +29,10 @@ h1 {
 .subtitle {
     text-align: center;
     color: #9d174d;
-    font-size: 15px;
-    margin-top: 5px;
+    font-size: 14px;
 }
 
-/* LABELS (CORRECCIÓN CLAVE) */
+/* TEXTO */
 label, .stMarkdown, .stText {
     color: #111827 !important;
     font-weight: 500;
@@ -61,21 +55,8 @@ label, .stMarkdown, .stText {
 
 /* METRICAS */
 .metric {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: bold;
-}
-
-/* TEXTO SECUNDARIO */
-.sub {
-    font-size: 13px;
-    color: #374151;
-}
-
-/* GRID INVENTARIO */
-.grid-inv {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
 }
 
 /* HR */
@@ -83,9 +64,8 @@ hr {
     border: none;
     height: 1px;
     background: #fecdd3;
-    margin: 25px 0;
+    margin: 20px 0;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -194,22 +174,24 @@ if relleno:
 receta.update(toppings)
 
 # ======================
-# INVENTARIO (GRID)
+# INVENTARIO (2 COLUMNAS)
 # ======================
 st.subheader("📦 Inventario")
 
-st.markdown('<div class="grid-inv">', unsafe_allow_html=True)
-
+ingredientes = list(receta.keys())
 inventario = {}
-for ing in receta:
-    if ing == "huevos":
-        inventario[ing] = st.number_input(
-            f"{ing} (pzas)", 0.0, 500.0, 0.0, key=ing)
-    else:
-        inventario[ing] = st.number_input(
-            f"{ing} (g)", 0.0, 10000.0, 0.0, key=ing)
 
-st.markdown('</div>', unsafe_allow_html=True)
+cols = st.columns(2)
+
+for i, ing in enumerate(ingredientes):
+    col = cols[i % 2]
+    with col:
+        if ing == "huevos":
+            inventario[ing] = st.number_input(
+                f"{ing} (pzas)", 0.0, 500.0, 0.0, key=f"inv_{ing}")
+        else:
+            inventario[ing] = st.number_input(
+                f"{ing} (g)", 0.0, 10000.0, 0.0, key=f"inv_{ing}")
 
 st.markdown("---")
 
@@ -248,7 +230,6 @@ with col1:
     <div class="card">
     <h3>📊 Producción</h3>
     <div class="metric">{round(galletas, 1)}</div>
-    <div class="sub">Galletas</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -257,7 +238,6 @@ with col2:
     <div class="card">
     <h3>💰 Costos</h3>
     <div class="metric">${round(costo_total, 2)}</div>
-    <div class="sub">Total</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -266,7 +246,6 @@ with col3:
     <div class="card">
     <h3>💵 Ganancia</h3>
     <div class="metric">${round(ganancia_total, 2)}</div>
-    <div class="sub">Total</div>
     </div>
     """, unsafe_allow_html=True)
 
