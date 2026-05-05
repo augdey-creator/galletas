@@ -1,137 +1,294 @@
 import streamlit as st
-import math
 import pandas as pd
+import math
+import io
 
-st.title("🍪 Calculadora de Costos de Galletas")
+st.set_page_config(page_title="Galletas Guapas", layout="centered")
 
-# INPUT
-galletas = st.number_input(
-    "¿Cuántas galletas quieres hacer?", min_value=1, value=15)
-
-# BASE
-base = st.selectbox("Selecciona la base:", ["Chocolate", "Vainilla"])
-
-# RELLENO
-usar_relleno = st.checkbox("¿Lleva relleno?")
-relleno = None
-if usar_relleno:
-    relleno = st.selectbox("Tipo de relleno:", [
-                           "Queso Philadelphia", "Nutella"])
-
-# TOPPINGS
-st.subheader("Toppings (máx. 200g en total)")
-toppings_opciones = ["Almendra", "Chispas chocolate", "Arándano", "Pistache"]
-toppings_seleccionados = st.multiselect(
-    "Selecciona toppings:", toppings_opciones)
-
-toppings_total = 200
-toppings_dict = {}
-
-if toppings_seleccionados:
-    gramos_por_topping = toppings_total / len(toppings_seleccionados)
-    for t in toppings_seleccionados:
-        toppings_dict[t.lower()] = gramos_por_topping
-
-# 🔥 IMPORTANTE: receta base = 15 galletas
-GALLETAS_BASE = 15
-factor = galletas / GALLETAS_BASE
-
-# RECETAS
-base_chocolate = {
-    "mantequilla": 220,
-    "azúcar refinada": 280,
-    "huevos": 2,
-    "vainilla": 10,
-    "cocoa": 50,
-    "harina": 420,
-    "fécula de maíz": 40,
-    "bicarbonato": 3,
-    "sal": 4
+# ======================
+# 🎨 ESTILOS ROSA
+# ======================
+st.markdown("""
+<style>
+.stApp {
+    background-color: #fff1f2;
 }
 
-base_vainilla = {
-    "mantequilla": 200,
-    "azúcar refinada": 310,
-    "huevos": 2,
-    "vainilla": 15,
-    "harina": 460,
-    "fécula de maíz": 40,
-    "bicarbonato": 4,
-    "sal": 4
+.block-container {
+    max-width: 900px;
+    margin: auto;
 }
 
-receta = base_chocolate.copy() if base == "Chocolate" else base_vainilla.copy()
+/* CARDS */
+.card {
+    border-radius: 16px;
+    padding: 20px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #ffe4e6;
+}
 
-# RELLENO
-if usar_relleno:
-    if relleno == "Queso Philadelphia":
-        receta["queso philadelphia"] = 225
-    elif relleno == "Nutella":
-        receta["nutella"] = 225
+/* TITULOS */
+h1 {
+    text-align: center;
+    color: #be185d;
+}
 
-# TOPPINGS
-receta.update(toppings_dict)
+/* METRICAS */
+.metric {
+    font-size: 30px;
+    font-weight: bold;
+}
 
-# COSTOS (presentación)
+.sub {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* COLORES */
+.green { color: #16a34a; }
+.red { color: #dc2626; }
+.yellow { color: #ca8a04; }
+.blue { color: #2563eb; }
+
+/* HR */
+hr {
+    border: none;
+    height: 1px;
+    background: #ffe4e6;
+    margin: 25px 0;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ======================
+# LOGO + HEADER
+# ======================
+st.markdown("<br>", unsafe_allow_html=True)
+
+# CENTRADO REAL CON COLUMNAS
+col1, col2, col3 = st.columns([1.5, 1, 1.5])
+with col2:
+    st.image("logo.png", width=150)
+
+# TITULO
+st.markdown("""
+<h1 style='text-align:center; margin-bottom:0;'>Galletas Guapas</h1>
+<p style='text-align:center; color:#9d174d; margin-top:5px;'>
+Calculadora de producción y rentabilidad
+</p>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ======================
+# CSV
+# ======================
+
+
+def cargar_costos(file):
+    df = pd.read_csv(file, sep=None, engine="python", encoding="latin1")
+
+    df.columns = (
+        df.columns.str.strip().str.lower()
+        .str.replace("á", "a").str.replace("é", "e")
+        .str.replace("í", "i").str.replace("ó", "o").str.replace("ú", "u")
+    )
+    return df
+
+
+archivo = st.file_uploader("📂 Sube tu costos.csv", type=["csv"])
+
+if archivo:
+    costos_df = cargar_costos(archivo)
+else:
+    csv_default = """ingrediente,porcion,precio
+mantequilla,360,80
+azucar refinada,2000,82
+huevos,30,67
+vainilla,150,21
+cocoa,200,142
+harina,1000,17
+fecula de maiz,425,46
+bicarbonato,227,25
+sal,750,21
+queso philadelphia,180,48
+nutella,650,169
+almendra,907,183
+chispas chocolate,300,125
+arandano,120,44
+pistache,340,215
+"""
+    costos_df = cargar_costos(io.StringIO(csv_default))
+
 costos = {
-    "mantequilla": {"porcion": 360, "precio": 80},
-    "azúcar refinada": {"porcion": 2000, "precio": 82},
-    "huevos": {"porcion": 30, "precio": 67},
-    "vainilla": {"porcion": 150, "precio": 21},
-    "cocoa": {"porcion": 200, "precio": 142},
-    "harina": {"porcion": 1000, "precio": 17},
-    "fécula de maíz": {"porcion": 425, "precio": 46},
-    "bicarbonato": {"porcion": 227, "precio": 25},
-    "sal": {"porcion": 750, "precio": 21},
-    "queso philadelphia": {"porcion": 180, "precio": 48},
-    "nutella": {"porcion": 650, "precio": 169},
-    "almendra": {"porcion": 907, "precio": 183},
-    "chispas chocolate": {"porcion": 300, "precio": 125},
-    "arándano": {"porcion": 120, "precio": 44},
-    "pistache": {"porcion": 340, "precio": 215}
+    row["ingrediente"]: {"porcion": row["porcion"], "precio": row["precio"]}
+    for _, row in costos_df.iterrows()
 }
 
-# CALCULO
-resultados = []
-costo_total_real = 0
+# ======================
+# CONFIGURACIÓN
+# ======================
+st.subheader("⚙️ Configuración")
 
-for ingrediente, cantidad in receta.items():
-    necesario = cantidad * factor
+base = st.selectbox("Base", ["Chocolate", "Vainilla"])
 
-    if ingrediente not in costos:
-        continue
+usar_relleno = st.checkbox("¿Con relleno?")
+relleno = st.selectbox(
+    "Tipo", ["queso philadelphia", "nutella"]) if usar_relleno else None
 
-    presentacion = costos[ingrediente]["porcion"]
-    precio = costos[ingrediente]["precio"]
+toppings_sel = st.multiselect(
+    "Toppings (200g total)",
+    ["almendra", "chispas chocolate", "arandano", "pistache"]
+)
 
-    # 💡 costo proporcional (REAL)
-    costo_real = (necesario / presentacion) * precio
-    costo_total_real += costo_real
+toppings = {}
+if toppings_sel:
+    gramos = 200 / len(toppings_sel)
+    for t in toppings_sel:
+        toppings[t] = gramos
 
-    # 💡 compra necesaria (opcional mostrar)
-    unidades = math.ceil(necesario / presentacion)
+st.markdown("---")
 
-    resultados.append({
-        "Ingrediente": ingrediente,
-        "Necesario (g/unid)": round(necesario, 2),
-        "Costo real": round(costo_real, 2),
-        "Comprar (unidades)": unidades
+# ======================
+# RECETA
+# ======================
+base_choc = {
+    "mantequilla": 220, "azucar refinada": 280, "huevos": 2,
+    "vainilla": 10, "cocoa": 50, "harina": 420,
+    "fecula de maiz": 40, "bicarbonato": 3, "sal": 4
+}
+
+base_vain = {
+    "mantequilla": 200, "azucar refinada": 310, "huevos": 2,
+    "vainilla": 15, "harina": 460,
+    "fecula de maiz": 40, "bicarbonato": 4, "sal": 4
+}
+
+receta = base_choc.copy() if base == "Chocolate" else base_vain.copy()
+
+if relleno:
+    receta[relleno] = 225
+
+receta.update(toppings)
+
+# ======================
+# INVENTARIO
+# ======================
+st.subheader("📦 Inventario")
+
+inventario = {}
+for ing in receta:
+    if ing == "huevos":
+        inventario[ing] = st.number_input(f"{ing} (piezas)", 0.0, 500.0, 0.0)
+    else:
+        inventario[ing] = st.number_input(f"{ing} (g)", 0.0, 10000.0, 0.0)
+
+st.markdown("---")
+
+# ======================
+# PRODUCCIÓN
+# ======================
+total_g = sum([v if k != "huevos" else 0 for k, v in receta.items()])
+total_g += receta.get("huevos", 0) * 50
+galletas = total_g / 100
+
+# ======================
+# COSTOS
+# ======================
+costo_insumos = sum(
+    (cant / costos[ing]["porcion"]) * costos[ing]["precio"]
+    for ing, cant in receta.items() if ing in costos
+)
+
+gastos_fijos = costo_insumos * 0.33
+costo_total = costo_insumos + gastos_fijos
+costo_galleta = costo_total / galletas if galletas > 0 else 0
+
+multiplicador = st.slider("Multiplicador de precio", 1.0, 5.0, 2.5)
+
+precio_sugerido = costo_galleta * multiplicador
+ganancia_por_galleta = precio_sugerido - costo_galleta
+ganancia_total = ganancia_por_galleta * galletas
+
+# ======================
+# ALERTA
+# ======================
+if ganancia_por_galleta < 5:
+    st.warning("⚠️ Margen bajo")
+elif ganancia_por_galleta > 15:
+    st.success("🔥 Excelente margen")
+
+# ======================
+# DASHBOARD
+# ======================
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(f"""
+    <div class="card">
+    <h3 class="blue">📊 Producción</h3>
+    <div class="metric">{round(galletas, 1)}</div>
+    <div class="sub">Galletas</div><br>
+    <div class="metric">{round(total_g, 0)} g</div>
+    <div class="sub">Mezcla total</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="card">
+    <h3 class="yellow">💰 Costos</h3>
+    <div class="metric">${round(costo_total, 2)}</div>
+    <div class="sub">Costo total</div><br>
+    <div class="metric">${round(costo_galleta, 2)}</div>
+    <div class="sub">Costo por galleta</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="card">
+    <h3 class="green">💵 Venta</h3>
+    <div class="metric">${round(precio_sugerido, 2)}</div>
+    <div class="sub">Precio sugerido</div><br>
+    <div class="metric green">${round(ganancia_total, 2)}</div>
+    <div class="sub">Ganancia total</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ======================
+# COMPRAS
+# ======================
+rows = []
+costo_compra = 0
+
+for ing, req in receta.items():
+    disp = inventario.get(ing, 0)
+    falt = max(req - disp, 0)
+
+    if ing in costos:
+        c = costos[ing]
+        unidades = math.ceil(falt / c["porcion"]) if falt > 0 else 0
+        costo = unidades * c["precio"]
+    else:
+        unidades = 0
+        costo = 0
+
+    costo_compra += costo
+
+    rows.append({
+        "Ingrediente": ing,
+        "Faltante": round(falt, 2),
+        "Comprar": unidades,
+        "Costo": round(costo, 2)
     })
 
-df = pd.DataFrame(resultados)
+df = pd.DataFrame(rows).sort_values(by="Costo", ascending=False)
 
-# OUTPUT
-st.subheader("🛒 Insumos necesarios")
-st.dataframe(df)
+st.subheader("🛒 Compras necesarias")
+st.dataframe(df, use_container_width=True, hide_index=True)
 
-st.subheader("💰 Costos")
-
-st.metric("Costo total receta", f"${round(costo_total_real, 2)} MXN")
-
-costo_por_galleta = costo_total_real / galletas
-st.metric("Costo por galleta", f"${round(costo_por_galleta, 2)} MXN")
-
-# EXTRA (nivel negocio 🔥)
-precio_sugerido = costo_por_galleta * 2.5
-st.subheader("💡 Sugerencia de venta")
-st.write(f"Precio sugerido por galleta: **${round(precio_sugerido, 2)} MXN**")
+st.metric("Total compra", f"${round(costo_compra, 2)}")
