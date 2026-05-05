@@ -6,20 +6,17 @@ import io
 st.set_page_config(page_title="Galletas Guapas", layout="centered")
 
 # ======================
-# 🎨 ESTILOS ROSA
+# 🎨 ESTILOS
 # ======================
 st.markdown("""
 <style>
-.stApp {
-    background-color: #fff1f2;
-}
+.stApp { background-color: #fff1f2; }
 
 .block-container {
     max-width: 900px;
     margin: auto;
 }
 
-/* CARDS */
 .card {
     border-radius: 16px;
     padding: 20px;
@@ -28,30 +25,15 @@ st.markdown("""
     border: 1px solid #ffe4e6;
 }
 
-/* TITULOS */
-h1 {
-    text-align: center;
-    color: #be185d;
-}
+.metric { font-size: 28px; font-weight: bold; }
 
-/* METRICAS */
-.metric {
-    font-size: 30px;
-    font-weight: bold;
-}
+.sub { font-size: 13px; color: #6b7280; }
 
-.sub {
-    font-size: 13px;
-    color: #6b7280;
-}
-
-/* COLORES */
 .green { color: #16a34a; }
 .red { color: #dc2626; }
 .yellow { color: #ca8a04; }
 .blue { color: #2563eb; }
 
-/* HR */
 hr {
     border: none;
     height: 1px;
@@ -62,19 +44,15 @@ hr {
 """, unsafe_allow_html=True)
 
 # ======================
-# LOGO + HEADER
+# HEADER
 # ======================
-st.markdown("<br>", unsafe_allow_html=True)
-
-# CENTRADO REAL CON COLUMNAS
-col1, col2, col3 = st.columns([1.5, 1, 1.5])
+col1, col2, col3 = st.columns([2, 1, 2])
 with col2:
-    st.image("logo.png", width=150)
+    st.image("logo.png", use_container_width=True)
 
-# TITULO
 st.markdown("""
-<h1 style='text-align:center; margin-bottom:0;'>Galletas Guapas</h1>
-<p style='text-align:center; color:#9d174d; margin-top:5px;'>
+<h1 style='text-align:center; color:#7a0f2b;'>🍪 Galletas Guapas</h1>
+<p style='text-align:center; color:#9d174d;'>
 Calculadora de producción y rentabilidad
 </p>
 """, unsafe_allow_html=True)
@@ -88,12 +66,7 @@ st.markdown("---")
 
 def cargar_costos(file):
     df = pd.read_csv(file, sep=None, engine="python", encoding="latin1")
-
-    df.columns = (
-        df.columns.str.strip().str.lower()
-        .str.replace("á", "a").str.replace("é", "e")
-        .str.replace("í", "i").str.replace("ó", "o").str.replace("ú", "u")
-    )
+    df.columns = df.columns.str.strip().str.lower()
     return df
 
 
@@ -121,26 +94,21 @@ pistache,340,215
 """
     costos_df = cargar_costos(io.StringIO(csv_default))
 
-costos = {
-    row["ingrediente"]: {"porcion": row["porcion"], "precio": row["precio"]}
-    for _, row in costos_df.iterrows()
-}
+costos = {row["ingrediente"]: {"porcion": row["porcion"],
+                               "precio": row["precio"]} for _, row in costos_df.iterrows()}
 
 # ======================
-# CONFIGURACIÓN
+# CONFIG
 # ======================
 st.subheader("⚙️ Configuración")
 
 base = st.selectbox("Base", ["Chocolate", "Vainilla"])
-
 usar_relleno = st.checkbox("¿Con relleno?")
 relleno = st.selectbox(
     "Tipo", ["queso philadelphia", "nutella"]) if usar_relleno else None
 
-toppings_sel = st.multiselect(
-    "Toppings (200g total)",
-    ["almendra", "chispas chocolate", "arandano", "pistache"]
-)
+toppings_sel = st.multiselect("Toppings (200g total)", [
+                              "almendra", "chispas chocolate", "arandano", "pistache"])
 
 toppings = {}
 if toppings_sel:
@@ -153,17 +121,10 @@ st.markdown("---")
 # ======================
 # RECETA
 # ======================
-base_choc = {
-    "mantequilla": 220, "azucar refinada": 280, "huevos": 2,
-    "vainilla": 10, "cocoa": 50, "harina": 420,
-    "fecula de maiz": 40, "bicarbonato": 3, "sal": 4
-}
-
-base_vain = {
-    "mantequilla": 200, "azucar refinada": 310, "huevos": 2,
-    "vainilla": 15, "harina": 460,
-    "fecula de maiz": 40, "bicarbonato": 4, "sal": 4
-}
+base_choc = {"mantequilla": 220, "azucar refinada": 280, "huevos": 2, "vainilla": 10,
+             "cocoa": 50, "harina": 420, "fecula de maiz": 40, "bicarbonato": 3, "sal": 4}
+base_vain = {"mantequilla": 200, "azucar refinada": 310, "huevos": 2,
+             "vainilla": 15, "harina": 460, "fecula de maiz": 40, "bicarbonato": 4, "sal": 4}
 
 receta = base_choc.copy() if base == "Chocolate" else base_vain.copy()
 
@@ -173,16 +134,25 @@ if relleno:
 receta.update(toppings)
 
 # ======================
-# INVENTARIO
+# INVENTARIO EN COLUMNAS
 # ======================
 st.subheader("📦 Inventario")
 
+ingredientes = list(receta.keys())
+
+num_cols = 3 if len(ingredientes) > 6 else 2
+cols = st.columns(num_cols)
+
 inventario = {}
-for ing in receta:
-    if ing == "huevos":
-        inventario[ing] = st.number_input(f"{ing} (piezas)", 0.0, 500.0, 0.0)
-    else:
-        inventario[ing] = st.number_input(f"{ing} (g)", 0.0, 10000.0, 0.0)
+
+for i, ing in enumerate(ingredientes):
+    with cols[i % num_cols]:
+        if ing == "huevos":
+            inventario[ing] = st.number_input(
+                f"{ing} (pzas)", 0.0, 500.0, 0.0, key=ing)
+        else:
+            inventario[ing] = st.number_input(
+                f"{ing} (g)", 0.0, 10000.0, 0.0, key=ing)
 
 st.markdown("---")
 
@@ -196,10 +166,8 @@ galletas = total_g / 100
 # ======================
 # COSTOS
 # ======================
-costo_insumos = sum(
-    (cant / costos[ing]["porcion"]) * costos[ing]["precio"]
-    for ing, cant in receta.items() if ing in costos
-)
+costo_insumos = sum((cant / costos[ing]["porcion"]) * costos[ing]["precio"]
+                    for ing, cant in receta.items() if ing in costos)
 
 gastos_fijos = costo_insumos * 0.33
 costo_total = costo_insumos + gastos_fijos
@@ -225,37 +193,16 @@ elif ganancia_por_galleta > 15:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown(f"""
-    <div class="card">
-    <h3 class="blue">📊 Producción</h3>
-    <div class="metric">{round(galletas, 1)}</div>
-    <div class="sub">Galletas</div><br>
-    <div class="metric">{round(total_g, 0)} g</div>
-    <div class="sub">Mezcla total</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='card'><h3 class='blue'>📊 Producción</h3><div class='metric'>{round(galletas, 1)}</div><div class='sub'>Galletas</div></div>", unsafe_allow_html=True)
 
 with col2:
-    st.markdown(f"""
-    <div class="card">
-    <h3 class="yellow">💰 Costos</h3>
-    <div class="metric">${round(costo_total, 2)}</div>
-    <div class="sub">Costo total</div><br>
-    <div class="metric">${round(costo_galleta, 2)}</div>
-    <div class="sub">Costo por galleta</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='card'><h3 class='yellow'>💰 Costos</h3><div class='metric'>${round(costo_total, 2)}</div><div class='sub'>Total</div></div>", unsafe_allow_html=True)
 
 with col3:
-    st.markdown(f"""
-    <div class="card">
-    <h3 class="green">💵 Venta</h3>
-    <div class="metric">${round(precio_sugerido, 2)}</div>
-    <div class="sub">Precio sugerido</div><br>
-    <div class="metric green">${round(ganancia_total, 2)}</div>
-    <div class="sub">Ganancia total</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='card'><h3 class='green'>💵 Venta</h3><div class='metric'>${round(ganancia_total, 2)}</div><div class='sub'>Ganancia</div></div>", unsafe_allow_html=True)
 
 st.markdown("---")
 
